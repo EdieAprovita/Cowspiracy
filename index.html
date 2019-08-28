@@ -1,24 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 	<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Pigpong</title>
-    <link rel="stylesheet" href="style.css"/>
-    </head>
-	  <body onkeydown="movePaletas(event)" onkeyup="stopPaletas(event)">
-		<div id="contenedor">
-			<canvas width="900" height="600" id="canvas"></canvas>
-
-			</canvas>
-			<div id="modal">
-        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRV1XjZHaf4ChdlGq8tf9JS-unOXAsr7Exw5fYaXOdPyP1jtqsO"/>
-        <button id="start-button">StartGame</button>
-        <p>Click to star the game!</p>
-			</div>
-		</div>
-		
-		<script src="PigPong.js"></script>
+		<meta charset = 'utf-8'>
+		<title>PigPong</title>
+	</head>
+	<body style = 'margin:0;background:#000'>
+		<canvas id = 'canvas'></canvas>
+		<script src = 'escala.js'></script>
+		<script src = 'PigPong.js'></script>
 	</body>
 </html>

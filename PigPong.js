@@ -1,202 +1,241 @@
-//Variables
-const canvas = document.getElementById("canvas")
-const ctx = canvas.getContext("2d");
-const button = document.querySelector("#star-buttom")
-let bucle
-const speed = 5
-const width = canvas.width
-const height = canvas.height
-let scorep1 = 0
-let scorep2 = 0
-const tamPaleta = 75
-const superficie = canvas.height-tamPaleta 
-//Clases
+// canvas, var
+const canvas = document.getElementById('canvas')
+const	ctx = canvas.getContext('2d')
+let keydown = []
+let twoPlayers = true, ball_speed_i = 5, winner = 0,
+	play = false, score_1 = score_2 = 0 ,background = new Image;
 
-class Field {
-  constructor() {
-    this.x = 0
-    this.y = 0
-    this.width = canvas.width
-    this.height = canvas.height
-    this.img = new Image()
-    this.img.src = "./imag/pastizal.png"
-    this.img.onload = () => {
-    this.draw()
-    }
-  }
-  draw() {
-    ctx.drawImage(this.img, this.x, this.y, this.width, this.height)
-    ctx.drawImage(
-    this.img,
-    this.x + canvas.width,
-    this.y,
-    this.width,
-    this.height
-    )
-    
-  }
+// input event
+
+(function() {
+	window.addEventListener('keydown',function(e) {
+		keydown[e.keyCode] = true;
+	},false);
+	window.addEventListener('keyup',function(e) {
+		keydown[e.keyCode] = false;
+	},false)
+})();
+
+// objetos
+
+const player1 = {
+	x:20,y:250,width:20,height:100
+},
+player2 = {
+	x:760,y:250,width:20,height:100
+},
+ball = {
+	x:400,y:parseInt(Math.random()*570+15),radio:15,dir:1,angle:120
+};
+
+// sonidos
+
+let snd_go = document.createElement('audio'),
+snd_colision = document.createElement('audio');
+snd_go.src = 'aud/Pick.wav';
+snd_colision.src = 'aud/wood1.wav';
+
+// imagenes
+
+let img_blok = new Image;
+img_blok.src = './imag/palet.png';
+
+// random background 
+
+function randomBackgroung() {
+	let backs = new Array('./imag/background.jpeg','./imag/background2.jpeg','./imag/background3.jpeg','./imag/background4.png','./imag/background5.jpeg',);
+	let i = parseInt(Math.random()*backs.length);
+	background.src = backs[i];
 }
 
-
-class Base {
-  choque(obj) {
-    if(this.fondo < obj.y || this.y > obj.fondo || this.derecha < obj.x || this.x > obj.derecha) {
-      return false
-    }else {
-      return true
-    }
-  }
+function drawBackground() {
+	ctx.drawImage(background,0,0,800,600);
 }
-class Score {
-  constructor(x) {
-    this.x = x
-    this.y = 25
-    this.score = 0
-  }
-  draw() {
-    ctx.font = "25px Arial"
-    ctx.fillText(this.score.toString(), this.x,this.y)
-  }
+function drawPlayers() {
+	// draw objetos
+	
+	ctx.save();
+	ctx.fillStyle = '#00cc66';
+	if(winner != 0) ctx.globalAlpha = 0;
+	ctx.drawImage(img_blok,player1.x,player1.y,player1.width,player1.height);
+	ctx.drawImage(img_blok,player2.x,player2.y,player2.width,player2.height);
+	ctx.beginPath();
+	ctx.arc(ball.x,ball.y,ball.radio,0,7);
+	ctx.fill();
+	ctx.restore();
+
+	// draw score
+	
+	ctx.save();
+	ctx.shadowOffsetX = shadowOffsetY = 0;
+	ctx.shadowBlur = 10;
+	ctx.shadowColor = '#fff';
+	ctx.font = '45px Arial';
+	ctx.fillStyle = 'black';
+	ctx.textAlign = 'center';
+	ctx.verticalAlign = 'middle';
+	ctx.fillText(score_1,20,30);
+	ctx.fillText(score_2,780,30);
+	ctx.restore();
 }
-class Ball  {
-  constructor() {
-    this.t = 25
-    this.x = Math.floor(Math.random() * (canvas.width - this.t))
-    this.y = Math.floor(Math.random() * (canvas.height - this.t))
-    this.xdir = speed
-    this.ydir = speed
-    this.p1 = new Score(25)
-    this.p2 = new Score(575)
-    this.img = new Image()
-    this.img.src = "./imag/poop.png"
-    
-  }
-  draw() {
-    ctx.drawImage(this.img, this.x, this.y, this.width, this.height)
-  }
-  choqueV() {
-    if(this.y <= 0 || this.y >=(canvas.height - this.t)) {
-      this.ydir = -this.ydir
-    }
-  }
-  choqueH(){
-    if(this.x <=0) {
-      this.xdir = -this.xdir
-      scorep2++
-      this.p2.score = scorep2
-    }
-    if(this.x >= (canvas.width - this.t)) {
-      this.xdir = -this.xdir
-      scorep1++
-      this.p1.score = scorep1
-    }
-  }
-  move() {
-    this.x+=this.xdir
-    this.y+=this.ydir
-    this.fondo = this.y + this.t
-    this.derecha = this.x + this.t
-    this.choqueV()
-    this.choqueH()
-  }
-  draw() {
-    ctx,fillRect(this.x,this.y,this.t,this.t)
-    this.p1.draw()
-    this.p2.draw()
-  }
+function movePlayers() {
+	// mover player1 
+	
+	if(keydown[65]) player1.y -= 5;
+	if(keydown[90]) player1.y += 5;
+	if(player1.y < 0) player1.y = 0;
+	if(player1.y > 500) player1.y = 500;
+
+	// mover player2 
+	
+	if(twoPlayers) {
+		if(keydown[38]) player2.y -= 5;
+		if(keydown[40]) player2.y += 5;
+	}
+	if(!twoPlayers && ball.dir == 1) {
+		if(ball.y - 50 < player2.y) player2.y -= 5;
+		if(ball.y - 50 > player2.y) player2.y += 5;
+	}
+	if(player2.y < 0) player2.y = 0;
+	if(player2.y > 500) player2.y = 500;
+
+	ball.x += (3 + ball_speed_i)*ball.dir;
+	ball.y += Math.sin(ball.angle)*(3 + ball_speed_i);
+	if (ball.x + ball.radio > player2.x &&
+		ball.y > player2.y &&
+		ball.y < player2.y + player2.height
+		)
+	{
+		ball.dir = -1;
+		ball_speed_i += 0.25;
+		let snd = snd_colision;
+		snd.currentTime = 0;
+		snd.play();
+	}
+	// player1
+	
+	if (ball.x - ball.radio < player1.x + player1.width &&
+		ball.y > player1.y &&
+		ball.y < player1.y + player1.height
+		)
+	{
+		ball.dir = 1;
+		ball_speed_i += 0.25;
+		let snd = snd_colision;
+		snd.currentTime = 0;
+		snd.play();
+	}
+	// walls
+	
+	if(ball.y + ball.radio > 600 && winner == 0) {
+		ball.angle = -ball.angle;
+		let snd = snd_colision;
+		snd.currentTime = 0;
+		snd.play();
+	}
+	if(ball.y - ball.radio < 0 && winner == 0) {
+		ball.angle = -ball.angle;
+		let snd = snd_colision;
+		snd.currentTime = 0;
+		snd.play();
+	}
+
+	if(ball.x < 0 && winner == 0) {
+		winner = 'PLAYER 2';
+		score_2 += 1;
+		ball.x = 500;
+	}
+	if(ball.x > 800 && winner == 0) {
+		winner = 'PLAYER 1';
+		score_1 += 1;
+		ball.x = 500;
+	}
+}
+// draw winner
+	
+function drawText() {
+	if(winner != 0) {
+		ctx.save();
+		ctx.shadowOffsetX = shadowOffsetY = 0;
+		ctx.shadowBlur = 10;
+		ctx.shadowColor = '#fff';
+		ctx.font = '40px Arial';
+		ctx.fillStyle = 'black';
+		ctx.textAlign = 'center';
+		ctx.verticalAlign = 'middle';
+		ctx.fillText('THE WINNER IS '+winner,400,300);
+		ctx.fillText('PRESS SPACE TO CONTINUE MATCH',400,340);
+		ball.x = 0;
+		ctx.restore();
+		
+		// restar game
+		
+		if(keydown[32]) {
+			winner = 0;
+			ball_speed_i = 6;
+			ball.angle = 120;
+			ball.x = 400;
+			ball.y = 300;
+			ball.dir = 1;
+			player1.y = player2.y = 250;
+			snd_go.play();
+			randomBackgroung();
+		}
+	}
+
+}
+// pantalla principal inicial del juego
+
+function getPlay() {
+	ctx.save();
+	ctx.shadowOffsetX = shadowOffsetY = 0;
+	ctx.shadowBlur = 10;
+	ctx.shadowColor = '#fff';
+	ctx.fillStyle = 'black';
+	ctx.textAlign = 'center';
+	ctx.verticalAlign = 'middle';
+	ctx.font = '42px verdana';
+	ctx.fillText('PigPong',400,200);
+	ctx.font = '32px verdana';
+	ctx.fillText('PRESS 1 FOR ONE PLAYER',400,300);
+	ctx.fillText('PRESS 2 FOR TWO PLAYERS',400,380);
+	ctx.font = '24px verdana';
+	ctx.fillText('USE "A" y "Z" FOR UP y DOWN',400,332);
+	ctx.fillText('USE "A" y "Z" FOR UP y DOWN PLAYER 1',400,412);
+	ctx.fillText('USE UP y DOWN ARROWS  FOR  PLAYER 2',400,436);
+	ctx.restore();
+	
+	//choose player 
+	
+	if(keydown[97] || keydown[49]){
+		play = true;
+		twoPlayers = false;
+		snd_go.play();
+		randomBackgroung();
+	}
+	// choose 2 players
+	
+	if(keydown[98] || keydown[50]){
+		play = true;
+		twoPlayers = true;
+		snd_go.play();
+	}
+}
+canvas.width = 800; canvas.height = 600;
+
+randomBackgroung();
+
+autoScale(canvas);
+
+function main() {
+	drawBackground(); 
+	if(play) {
+		movePlayers();
+		drawPlayers();
+		drawText();
+	} else { 
+		getPlay();
+	}
 }
 
-class Paletas {
-  constructor(x) {
-    this.x = x
-    this.w = 25
-    this.h = tamPaleta
-    this.y = Math.floor(Math.random()* superficie)
-    this.dir = 0
-  }
-  draw() {
-    ctx.fillRect(this.x,this.y,this.w,this.h)
-  }
-  move() {
-    this.y+=this.dir
-    this.derecha = this.w + this.x
-    this.fondo = this.h + this.y 
-    if(this.y <= 0) {
-      this.y = 0
-      this.dir = 0
-    }
-    if(this.y >= superficie) {
-      this.y = superficie
-      this.dir= 0
-    }
-  }
-}
-
-//Objetos
-const ball = new Ball()
-const player1 = new Paletas(30)
-const player2 = new Paletas(545)
-
-//Funciones de control
-function movePaletas(event) {
-  let tecla = event.keyCode
-  if(tecla == 38) {
-    player2.dir = -speed 
-  }
-  if(tecla ==40) {
-    player2.dir = speed
-  }
-  if(tecla == 87) {
-    player1.dir = -speed
-  }
-  if(tecla == 83) {
-    player1.dir = speed
-  }
-}
-
-function stopPaletas(event)  {
-  let tecla = event.keyCode
-  if(tecla == 38 || tecla == 40) {
-    player2.dir = 0
-  }
-  if(tecla == 87 || tecla == 83) {
-    player1.dir = 0
-  }
-}
-
-function choque() {
-  if(ball.choque(player1) || ball.choque(player2)) {
-    ball.xdir = -ball.xdir
-  }
-}
-
-//Funciones globales 
-
-function draw() {
-  ctx.clearReact(0,0,canvas.width,canvas.height)
-  ball.draw()
-  player1.draw()
-  player2.draw()
-}
-
-function frame(){
-  ball.move()
-  player1.move()
-  player2.move()
-  draw()
-  choque()
-  bucle = requestAnimationFrame(frame)
-}
-
-button.onclick = function () {
-document.querySelector("modal")  
-frame()
-}
-
-function gameOver() {
-  if(scorep1 === 5 || scorep2 === 5 ) {
-    ctx.font = "65px Ariel"
-  ctx.fillText("Game Over!!!!", canvas.width / 2 -100, 200)
-  }
-  
-}
+setInterval(main,40);
